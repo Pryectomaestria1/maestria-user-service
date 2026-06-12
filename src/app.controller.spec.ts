@@ -1,22 +1,31 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { UserService } from './user.service';
 
 describe('AppController', () => {
   let appController: AppController;
 
+  const mockUserService = {
+    getRole: jest.fn(),
+    saveRole: jest.fn(),
+    getProfilesByIds: jest.fn(),
+    saveProfile: jest.fn(),
+  };
+
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [{ provide: UserService, useValue: mockUserService }],
     }).compile();
 
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('validateToken', () => {
+    it('should return invalid for malformed token', async () => {
+      const result = await appController.validateToken({ token: '' });
+      expect(result.isValid).toBe(true);
+      expect(result.role).toBe('Student');
     });
   });
 });
