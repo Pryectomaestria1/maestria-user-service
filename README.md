@@ -1,6 +1,6 @@
 # Maestria - User Service 👤
 
-Microservicio encargado de la gestión de perfiles de usuario y autenticación gRPC.
+Microservicio encargado de la gestión de perfiles de usuario y autenticación gRPC. Utiliza PostgreSQL con Prisma ORM y base de datos independiente (`user_db`).
 
 ## 🚀 Requisitos e Instalación
 
@@ -19,10 +19,18 @@ directorio-padre/
 └── grpc-contracts/
 ```
 
-### 2. Ejecución del Servicio
-Instala las dependencias y corre el servidor en modo desarrollo (corre en el puerto gRPC `50051`):
+### 2. Base de Datos (Prisma)
+Asegúrate de tener la infraestructura de Docker encendida (`docker-compose up -d` en el gateway) y configura la conexión a la base de datos **independiente** de este servicio:
 
 ```bash
+cp .env.example .env
 npm install
+npm run prisma:push
+```
+
+### 3. Ejecución del Servicio
+Inicia el microservicio en modo desarrollo (corre en el puerto gRPC `50051`):
+
+```bash
 npm run start:dev
 ```
