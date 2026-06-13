@@ -15,7 +15,7 @@ ARG PROTO_FILE
 RUN git clone --depth 1 --branch ${GRPC_CONTRACTS_REF} ${GRPC_CONTRACTS_REPO} /grpc-contracts \
   && cp /grpc-contracts/${PROTO_FILE} /tmp/${PROTO_FILE}
 
-FROM node:20-alpine AS builder
+FROM node:20 AS builder
 WORKDIR /app
 ARG SERVICE_PORT
 ENV SERVICE_PORT=${SERVICE_PORT}
@@ -29,7 +29,7 @@ RUN npx prisma generate
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine AS runner
+FROM node:20 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
