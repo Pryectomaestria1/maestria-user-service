@@ -37,12 +37,12 @@ ARG SERVICE_PORT
 ENV SERVICE_PORT=${SERVICE_PORT}
 
 COPY package*.json ./
+COPY prisma ./prisma
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY prisma ./prisma
 
 # Copia el .proto necesario al directorio /grpc-contracts/ para preservar
 # el path relativo `../grpc-contracts/<file>.proto` que usa el código.
