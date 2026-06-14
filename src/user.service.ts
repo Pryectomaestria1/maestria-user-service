@@ -24,6 +24,10 @@ export class UserService extends PrismaClient implements OnModuleInit, OnModuleD
     });
   }
 
+  async getProfileById(userId: string) {
+    return this.userProfile.findUnique({ where: { userId } });
+  }
+
   async getProfilesByIds(userIds: string[]) {
     return this.userProfile.findMany({
       where: { userId: { in: userIds } },

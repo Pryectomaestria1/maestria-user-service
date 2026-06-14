@@ -1,53 +1,40 @@
 import { Controller } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
-import * as jwt from 'jsonwebtoken';
+import { GrpcMethod, RpcException } from '@nestjs/microservices';
+import { Metadata } from '@grpc/grpc-js';
 import { UserService } from './user.service';
 
 @Controller()
 export class AppController {
   constructor(private readonly userService: UserService) {}
 
-  @GrpcMethod('UserService', 'ValidateToken')
-  async validateToken(data: { token: string }) {
-    try {
-      const decoded: any = jwt.decode(data.token);
-      const userId = decoded?.sub || '';
-
-      const upgradedRole = userId ? await this.userService.getRole(userId) : null;
-      const role =
-        upgradedRole ??
-        decoded?.['https://udemyclone.com/roles']?.[0] ??
-        'Student';
-
-      return {
-        isValid: true,
-        userId,
-        role,
-      };
-    } catch {
-      return { isValid: false, userId: '', role: '' };
+  @GrpcMethod('UserService', 'GetUserProfile')
+  async getUserProfile(_: unknown, metadata: Metadata) {
+    const userId = metadata.get('x-user-id')?.[0]?.toString();
+    if (!userId) {
+      throw new RpcException('INVALID_ARGUMENT: x-user-id required');
     }
+    const profile = await this.userService.getProfileById(userId);
+    return {
+      name: profile?.name ?? '',
+      avatarUrl: profile?.avatarUrl ?? '',
+    };
   }
 
-  @GrpcMethod('UserService', 'BecomeInstructor')
-  async becomeInstructor(data: { token: string }) {
-    try {
-      const decoded: any = jwt.decode(data.token);
-      const userId = decoded?.sub || '';
+  @GrpcMethod('UserService', 'GetRole')
+  async getRole(data: { userId: string }) {
+    const role = await this.userService.getRole(data.userId);
+    return { role: role ?? '' };
+  }
 
-      if (!userId) {
-        return { success: false, role: 'Student' };
-      }
-
-      await this.userService.saveRole(userId, 'Instructor');
-
-      return {
-        success: true,
-        role: 'Instructor',
-      };
-    } catch {
-      return { success: false, role: 'Student' };
+  @GrpcMethod('UserService', 'SetUserRole')
+  async setUserRole(data: { userId: string; role: string }) {
+    if (data.role !== 'Student' && data.role !== 'Instructor') {
+      throw new RpcException(
+        'INVALID_ARGUMENT: role must be Student or Instructor',
+      );
     }
+    await this.userService.saveRole(data.userId, data.role);
+    return { success: true, role: data.role };
   }
 
   @GrpcMethod('UserService', 'GetUsersByIds')
@@ -81,22 +68,5 @@ export class AppController {
       };
     });
     return { users };
-  }
-
-  @GrpcMethod('UserService', 'SyncProfile')
-  async syncProfile(data: { userId: string; name: string; avatarUrl: string }) {
-    try {
-      if (data.userId && data.name) {
-        await this.userService.saveProfile(
-          data.userId,
-          data.name,
-          data.avatarUrl || '',
-        );
-        return { success: true };
-      }
-      return { success: false };
-    } catch {
-      return { success: false };
-    }
   }
 }
